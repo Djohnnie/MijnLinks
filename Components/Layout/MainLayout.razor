@@ -1,0 +1,136 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject ThemeService ThemeService
+@inject LinkService LinkService
+
+<MudThemeProvider @bind-IsDarkMode="_isDarkMode" Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="0" Class="appbar-glass">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
+                       OnClick="ToggleDrawer" />
+        <div style="display: flex; align-items: center; gap: 8px; margin-left: 8px; flex-shrink: 0;">
+            <MudIcon Icon="@Icons.Material.Filled.Link" Size="Size.Large" />
+            <MudText Typo="Typo.h5" Style="white-space: nowrap; font-weight: 700; letter-spacing: -0.02em;">MijnLinks</MudText>
+        </div>
+        <MudSpacer />
+        <MudTooltip Text="@(_isDarkMode ? "Schakel naar licht thema" : "Schakel naar donker thema")">
+            <MudIconButton Icon="@(_isDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                           Color="Color.Inherit" OnClick="ToggleTheme" Class="theme-toggle" />
+        </MudTooltip>
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" ClipMode="DrawerClipMode.Always" Elevation="0" Class="drawer-styled">
+        <div class="pa-4">
+            <MudText Typo="Typo.overline" Class="ml-2" Color="Color.Secondary" Style="letter-spacing: 0.1em;">NAVIGATIE</MudText>
+        </div>
+        <MudNavMenu Bordered="true" Class="px-2">
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard"
+                        Class="nav-item-styled">
+                Dashboard
+            </MudNavLink>
+            @if (_categories != null)
+            {
+                <MudDivider Class="my-3 mx-2" />
+                <MudText Typo="Typo.overline" Class="ml-4 mb-2" Color="Color.Secondary" Style="letter-spacing: 0.1em;">CATEGORIEËN</MudText>
+                @foreach (var category in _categories)
+                {
+                    <MudNavLink Href="@($"/category/{Uri.EscapeDataString(category)}")"
+                                Icon="@Icons.Material.Filled.Folder"
+                                Class="nav-item-styled">
+                        @category
+                    </MudNavLink>
+                }
+            }
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Class="main-content">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-8 px-4 px-md-6">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = true;
+    private bool _isDarkMode;
+    private List<string>? _categories;
+
+    private readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#1565C0",
+            Secondary = "#64748b",
+            AppbarBackground = "#ffffff",
+            AppbarText = "#1e293b",
+            Background = "#f1f5f9",
+            Surface = "#ffffff",
+            DrawerBackground = "#ffffff",
+            DrawerText = "#334155",
+            TextPrimary = "#1e293b",
+            TextSecondary = "#64748b"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#60a5fa",
+            Secondary = "#94a3b8",
+            AppbarBackground = "#0f172a",
+            AppbarText = "#e2e8f0",
+            Background = "#0f172a",
+            Surface = "#1e293b",
+            DrawerBackground = "#1e293b",
+            DrawerText = "#cbd5e1",
+            TextPrimary = "#f1f5f9",
+            TextSecondary = "#94a3b8"
+        },
+        Typography = new Typography
+        {
+            Default = new DefaultTypography
+            {
+                FontFamily = ["Roboto", "Helvetica", "Arial", "sans-serif"]
+            }
+        },
+        LayoutProperties = new LayoutProperties
+        {
+            DefaultBorderRadius = "12px"
+        }
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ThemeService.InitializeAsync();
+            _isDarkMode = ThemeService.IsDarkMode;
+
+            _categories = await LinkService.GetCategoriesAsync();
+
+            ThemeService.OnThemeChanged += OnThemeChanged;
+            StateHasChanged();
+        }
+    }
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private async Task ToggleTheme()
+    {
+        await ThemeService.ToggleThemeAsync();
+        _isDarkMode = ThemeService.IsDarkMode;
+    }
+
+    private void OnThemeChanged()
+    {
+        _isDarkMode = ThemeService.IsDarkMode;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= OnThemeChanged;
+    }
+}

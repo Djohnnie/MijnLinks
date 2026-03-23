@@ -1,0 +1,33 @@
+<MudCard Class="link-tile" Style="cursor: pointer; height: 100%; border-radius: 16px; overflow: hidden; border: 2px solid transparent;" @onclick="NavigateToLink">
+    <MudCardContent Class="tile-content">
+        <div class="icon-circle" style="background: @(Link.IconColor + "18");">
+            <div class="link-icon" style="fill: @Link.IconColor; color: @Link.IconColor;">
+                @((MarkupString)Link.SvgIcon)
+            </div>
+        </div>
+        <MudText Typo="Typo.subtitle1" Align="Align.Center" Class="mt-3 tile-title">@Link.Title</MudText>
+        <MudText Typo="Typo.caption" Align="Align.Center" Color="Color.Secondary" Class="tile-url">@GetDomain()</MudText>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired]
+    public Link Link { get; set; } = default!;
+
+    [Parameter]
+    public int Index { get; set; }
+
+    [Inject]
+    private NavigationManager NavigationManager { get; set; } = default!;
+
+    private void NavigateToLink()
+    {
+        NavigationManager.NavigateTo(Link.Url, forceLoad: true);
+    }
+
+    private string GetDomain()
+    {
+        try { return new Uri(Link.Url).Host.Replace("www.", ""); }
+        catch { return Link.Url; }
+    }
+}

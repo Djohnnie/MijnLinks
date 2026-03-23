@@ -1,0 +1,47 @@
+@page "/"
+@inject LinkService LinkService
+
+<PageTitle>MijnLinks - Dashboard</PageTitle>
+
+<div class="page-header">
+    <MudText Typo="Typo.h4" Class="page-title">
+        <MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-2" Style="vertical-align: middle;" />
+        Dashboard
+    </MudText>
+    <MudText Typo="Typo.body1" Color="Color.Secondary" Class="mt-1">Je belangrijkste links</MudText>
+</div>
+
+@if (_loading)
+{
+    <div class="d-flex justify-center mt-16">
+        <MudProgressCircular Indeterminate="true" Size="Size.Large" Color="Color.Primary" />
+    </div>
+}
+else if (_links.Count == 0)
+{
+    <MudAlert Severity="Severity.Info" Class="mt-4" Variant="Variant.Outlined">Geen belangrijke links gevonden.</MudAlert>
+}
+else
+{
+    <MudGrid Spacing="2" Class="mt-2 tile-grid">
+        @for (var i = 0; i < _links.Count; i++)
+        {
+            var link = _links[i];
+            var delay = i;
+            <MudItem xs="6" sm="6" md="4" lg="3" Style="@($"animation-delay: {delay * 60}ms")">
+                <LinkTile Link="link" Index="delay" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private List<Link> _links = [];
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _links = await LinkService.GetImportantLinksAsync();
+        _loading = false;
+    }
+}
